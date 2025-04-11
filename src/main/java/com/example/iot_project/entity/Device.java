@@ -14,7 +14,7 @@ public class Device {
 
     private String ledColor;
 
-    private Double fanSpeed;
+    private Integer fanSpeed;
 
     private Boolean shouldUpdate;
 
@@ -61,11 +61,11 @@ public class Device {
         this.ledColor = ledColor;
     }
 
-    public Double getFanSpeed() {
+    public Integer getFanSpeed() {
         return fanSpeed;
     }
 
-    public void setFanSpeed(Double fanSpeed) {
+    public void setFanSpeed(Integer fanSpeed) {
         this.fanSpeed = fanSpeed;
     }
 

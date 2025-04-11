@@ -1,6 +1,7 @@
 package com.example.iot_project.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.aggregation.ArrayOperators;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -12,7 +13,7 @@ public class Log {
 
     private String LEDStatus;
     private String LEDColor;
-    private Double fanSpeed;
+    private Integer fanSpeed;
 
     private LocalDateTime timestamp;
 
@@ -40,11 +41,11 @@ public class Log {
         this.LEDColor = LEDColor;
     }
 
-    public Double getFanSpeed() {
+    public Integer getFanSpeed() {
         return fanSpeed;
     }
 
-    public void setFanSpeed(Double fanSpeed) {
+    public void setFanSpeed(Integer fanSpeed) {
         this.fanSpeed = fanSpeed;
     }
 
