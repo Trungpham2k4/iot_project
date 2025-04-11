@@ -4,40 +4,58 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LimitSetting {
-    private static double HUMIDITY_LIMIT = 0.0;
-    private static double TEMPERATURE_LIMIT = 0.0;
-    private static double LIGHT_LIMIT = 0.0;
-    private static double FAN_LIMIT = 0.0;
+    private String data;
+    private String condition;
+    private Double value;
+    private String task;
+    private String device;
+    private Double deviceValue;
 
-    public static double getHumidityLimit() {
-        return HUMIDITY_LIMIT;
+    public String getData() {
+        return data;
     }
 
-    public static void setHumidityLimit(double humidityLimit) {
-        HUMIDITY_LIMIT = humidityLimit;
+    public void setData(String data) {
+        this.data = data;
     }
 
-    public static double getTemperatureLimit() {
-        return TEMPERATURE_LIMIT;
+    public String getCondition() {
+        return condition;
     }
 
-    public static void setTemperatureLimit(double temperatureLimit) {
-        TEMPERATURE_LIMIT = temperatureLimit;
+    public void setCondition(String condition) {
+        this.condition = condition;
     }
 
-    public static double getLightLimit() {
-        return LIGHT_LIMIT;
+    public Double getValue() {
+        return value;
     }
 
-    public static void setLightLimit(double lightLimit) {
-        LIGHT_LIMIT = lightLimit;
+    public void setValue(Double value) {
+        this.value = value;
     }
 
-    public static double getFanLimit() {
-        return FAN_LIMIT;
+    public String getTask() {
+        return task;
     }
 
-    public static void setFanLimit(double fanLimit) {
-        FAN_LIMIT = fanLimit;
+    public void setTask(String task) {
+        this.task = task;
+    }
+
+    public String getDevice() {
+        return device;
+    }
+
+    public void setDevice(String device) {
+        this.device = device;
+    }
+
+    public Double getDeviceValue() {
+        return deviceValue;
+    }
+
+    public void setDeviceValue(Double deviceValue) {
+        this.deviceValue = deviceValue;
     }
 }

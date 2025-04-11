@@ -1,8 +1,10 @@
 package com.example.iot_project.entity;
 
 
+import org.bson.json.JsonObject;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document("Device")
 public class Device {
@@ -15,6 +17,25 @@ public class Device {
     private Double fanSpeed;
 
     private Boolean shouldUpdate;
+
+    // POJO class: MongoDB tự ánh xạ field sang đúng tên các field trong class
+    @Field(name = "schedule")
+    private Schedule schedule;
+
+    @Field(name = "automation")
+    private Automation automation;
+
+    public Automation getAutomation() {
+        return automation;
+    }
+
+    public void setSchedule(Schedule schedule) {
+        this.schedule = schedule;
+    }
+
+    public Schedule getSchedule() {
+        return schedule;
+    }
 
     public String getDeviceId() {
         return deviceId;
