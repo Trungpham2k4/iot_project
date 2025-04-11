@@ -134,8 +134,7 @@ public class MQTTPubSubService {
                 @Override
                 public void messageArrived(String topic, MqttMessage mqttMessage) {
                     String message = new String(mqttMessage.getPayload(), StandardCharsets.UTF_8);
-                    System.out.println("Received: " + message);
-                    System.out.println(topic);
+
 
                     String[] parts = topic.split("/");
                     String feed_id = parts[2];
@@ -154,102 +153,74 @@ public class MQTTPubSubService {
                     double fanValue = 0.0;
                     String fanAction = null;
                     String fanDeviceValue = null;
+                    String fanDevice = null;
 
                     String ledCondition = null;
                     double ledValue = 0.0;
                     String ledAction = null;
                     String ledDeviceValue = null;
+                    String ledDevice = null;
 
                     if (fanAutomation != null){
                         fanCondition = fanAutomation.getCondition();
                         fanValue = Double.parseDouble(fanAutomation.getValue());
                         fanAction = fanAutomation.getTask();
                         fanDeviceValue = fanAutomation.getDeviceValue();
+                        fanDevice = fanAutomation.getDevice();
                     }
                     if (ledAutomation != null){
                         ledCondition = ledAutomation.getCondition();
                         ledValue = Double.parseDouble(ledAutomation.getValue());
                         ledAction = ledAutomation.getTask();
                         ledDeviceValue = ledAutomation.getDeviceValue();
+                        ledDevice = ledAutomation.getDevice();
                     }
 
 
                     switch (feed_id){
                         case "humidity", "temperature" -> {
+                            System.out.println("Received: " + message);
+                            System.out.println(topic);
                             synchronized (sessionData){
                                 if (Objects.equals("humidity", feed_id)) {
                                     sessionData.put("humidity", Double.parseDouble(message));
 
                                     if(sessionData.containsKey("temperature")){
-                                        if (fanAutomation != null) {
-                                            if (Objects.equals(fanAutomation.getData(), "temperature")) {
-                                                checkCondition(fanAction, fanDeviceValue, "fan", fanCondition,
-                                                        fanValue, sessionData.get("temperature"));
-
-                                            }
-                                            if (Objects.equals(fanAutomation.getData(), "humidity")) {
-                                                checkCondition(fanAction, fanDeviceValue, "fan", fanCondition,
-                                                        fanValue, sessionData.get("humidity"));
-                                            }
-                                        }
-                                        if (ledAutomation != null){
-                                            if (Objects.equals(ledAutomation.getData(), "temperature")){
-                                                checkCondition(ledAction, ledDeviceValue, "led", ledCondition,
-                                                        ledValue, sessionData.get("temperature"));
-                                            }
-                                            if (Objects.equals(ledAutomation.getData(), "humidity")){
-                                                checkCondition(ledAction, ledDeviceValue, "led", ledCondition,
-                                                        ledValue, sessionData.get("humidity"));
-                                            }
-                                        }
-
-                                        saveData(date);
+                                        checkAutomation(date, fanAutomation, ledAutomation, fanCondition, fanValue, fanAction, fanDeviceValue, fanDevice,
+                                                ledCondition, ledValue, ledAction, ledDeviceValue, ledDevice);
                                     }
 
                                 } else {
                                     sessionData.put("temperature", Double.parseDouble(message));
 
                                     if(sessionData.containsKey("humidity")){
-                                        if (fanAutomation != null) {
-                                            if (Objects.equals(fanAutomation.getData(), "temperature")) {
-                                                checkCondition(fanAction, fanDeviceValue, "fan", fanCondition,
-                                                        fanValue, sessionData.get("temperature"));
-
-                                            }
-                                            if (Objects.equals(fanAutomation.getData(), "humidity")) {
-                                                checkCondition(fanAction, fanDeviceValue, "fan", fanCondition,
-                                                        fanValue, sessionData.get("humidity"));
-                                            }
-                                        }
-                                        if (ledAutomation != null){
-                                            if (Objects.equals(ledAutomation.getData(), "temperature")){
-                                                checkCondition(ledAction, ledDeviceValue, "led", ledCondition,
-                                                        ledValue, sessionData.get("temperature"));
-                                            }
-                                            if (Objects.equals(ledAutomation.getData(), "humidity")){
-                                                checkCondition(ledAction, ledDeviceValue, "led", ledCondition,
-                                                        ledValue, sessionData.get("humidity"));
-                                            }
-                                        }
-                                        saveData(date);
+                                        checkAutomation(date, fanAutomation, ledAutomation, fanCondition, fanValue, fanAction, fanDeviceValue, fanDevice,
+                                                ledCondition, ledValue, ledAction, ledDeviceValue, ledDevice);
                                     }
 
                                 }
                             }
                         }
                         case "light" -> {
+                            System.out.println("Received: " + message);
+                            System.out.println(topic);
                             Light_Sensor_Data data = new Light_Sensor_Data();
                             data.setDataId(UUID.randomUUID().toString());
                             data.setIntensity(Double.parseDouble(message));
                             data.setTimestamp(date);
                             light_sensor_dataRepo.save(data);
+
                             if (fanAutomation != null){
-                                checkCondition(fanAction, fanDeviceValue, "fan", fanCondition,
-                                        fanValue, data.getIntensity());
+                                if (Objects.equals(fanAutomation.getData(),"light_value")){
+                                    checkCondition(fanAction, fanDeviceValue, fanDevice, fanCondition,
+                                            fanValue, data.getIntensity());
+                                }
                             }
                             if (ledAutomation != null){
-                                checkCondition(ledAction, ledDeviceValue, "led", ledCondition,
-                                        ledValue, data.getIntensity());
+                                if (Objects.equals(ledAutomation.getData(),"light_value")){
+                                    checkCondition(ledAction, ledDeviceValue, ledDevice, ledCondition,
+                                            ledValue, data.getIntensity());
+                                }
                             }
 
                         }
@@ -258,6 +229,36 @@ public class MQTTPubSubService {
 
                     System.out.println("Save successfully");
                 }
+
+                private void checkAutomation(LocalDateTime date, Automation fanAutomation, Automation ledAutomation,
+                                             String fanCondition, double fanValue, String fanAction, String fanDeviceValue,
+                                             String fanDevice, String ledCondition, double ledValue, String ledAction,
+                                             String ledDeviceValue, String ledDevice) {
+                    if (fanAutomation != null) {
+                        if (Objects.equals(fanAutomation.getData(), "temperature")) {
+                            checkCondition(fanAction, fanDeviceValue, fanDevice, fanCondition,
+                                    fanValue, sessionData.get("temperature"));
+
+                        }
+                        if (Objects.equals(fanAutomation.getData(), "humidity")) {
+                            checkCondition(fanAction, fanDeviceValue, fanDevice, fanCondition,
+                                    fanValue, sessionData.get("humidity"));
+                        }
+                    }
+                    if (ledAutomation != null){
+                        if (Objects.equals(ledAutomation.getData(), "temperature")){
+                            checkCondition(ledAction, ledDeviceValue, ledDevice, ledCondition,
+                                    ledValue, sessionData.get("temperature"));
+                        }
+                        if (Objects.equals(ledAutomation.getData(), "humidity")){
+                            checkCondition(ledAction, ledDeviceValue, ledDevice, ledCondition,
+                                    ledValue, sessionData.get("humidity"));
+                        }
+                    }
+
+                    saveData(date);
+                }
+
                 private void checkCondition(String action, String actionValue, String device,
                                             String condition,  double conditionValue, double sensorValue) {
                         switch (device) {
@@ -521,7 +522,7 @@ public class MQTTPubSubService {
                 if (effectiveDays[today] && (fanSchedule.isRepeat() || (Fanruns.get(today) == 0 && !fanSchedule.isRepeat()))){
                     long timeDiff = Duration.between(scheduleTime, nowTime).getSeconds();
 //                    System.out.println(timeDiff);
-                    if ( timeDiff >= 0 && timeDiff <= 60 ){
+                    if ( timeDiff >= 0 && timeDiff <= 10 ){
                             if(Objects.equals("set_value", fanSchedule.getSelectAction())){
                                 device.setStatus(Integer.parseInt(fanSchedule.getActionValue()) != 0 ? "ON" : "OFF");
                                 device.setFanSpeed(Integer.parseInt(fanSchedule.getActionValue()));
@@ -564,7 +565,7 @@ public class MQTTPubSubService {
                 if (effectiveDays[today] && (ledSchedule.isRepeat() || (Ledruns.get(today) == 0 && !ledSchedule.isRepeat()))){
                     long timeDiff = Duration.between(scheduleTime, nowTime).getSeconds();
 //                    System.out.println(timeDiff);
-                    if ( timeDiff >= 0 && timeDiff <= 60 ){
+                    if ( timeDiff >= 0 && timeDiff <= 10 ){
                         if(Objects.equals("set_value", ledSchedule.getSelectAction())){
                             String color = ledSchedule.getActionValue();
                             device.setStatus(Objects.equals(color, "#000000") ? "OFF" : "ON");
