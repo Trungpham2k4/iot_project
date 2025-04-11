@@ -81,11 +81,12 @@ public class MQTTPubSubService {
             deviceRepo.saveAll(lst);
         }
         operators.put("<",  (a, b) -> a < b);
-        operators.put("<=", (a, b) -> a <= b);
         operators.put(">",  (a, b) -> a > b);
-        operators.put(">=", (a, b) -> a >= b);
-        operators.put("=", Double::equals); // nếu dùng Integer
-        operators.put("!=", (a,b) -> !a.equals(b));
+        operators.put("=", Double::equals);
+
+//        operators.put("<=", (a, b) -> a <= b);
+//        operators.put(">=", (a, b) -> a >= b);
+//        operators.put("!=", (a,b) -> !a.equals(b));
 
 
         Fanruns.put(0,0);
@@ -414,12 +415,12 @@ public class MQTTPubSubService {
         try {
             MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
             message.setQos(1);
-            if(Objects.equals(feed, "fan")){
-                mqttClient.publish(topic, new MqttMessage(payload.getBytes(StandardCharsets.UTF_8)));
-            }else{
-                mqttClient.publish(topic, message);
-            }
-
+//            if(Objects.equals(feed, "fan")){
+//                mqttClient.publish(topic, new MqttMessage(payload.getBytes(StandardCharsets.UTF_8)));
+//            }else{
+//
+//            }
+            mqttClient.publish(topic, message);
             System.out.println("Published: " + payload + " to topic: " + topic);
         } catch (MqttException e) {
             e.printStackTrace();
@@ -500,9 +501,9 @@ public class MQTTPubSubService {
                 // getValue trả về giá trị từ t2 -> CN: 1 -> 7
                 boolean[] effectiveDays = fanSchedule.getWeekdaysRepeat();
 
-                if (fanSchedule.getTime() == null){
-                    continue;
-                }
+//                if (fanSchedule.getTime() == null){
+//                    continue;
+//                }
                 String[] trimmed = fanSchedule.getTime().split(":");
                 LocalTime scheduleTime = LocalTime.of(Integer.parseInt(trimmed[0]) + 7, Integer.parseInt(trimmed[1]), 0);
 
@@ -519,7 +520,7 @@ public class MQTTPubSubService {
 
                 if (effectiveDays[today] && (fanSchedule.isRepeat() || (Fanruns.get(today) == 0 && !fanSchedule.isRepeat()))){
                     long timeDiff = Duration.between(scheduleTime, nowTime).getSeconds();
-                    System.out.println(timeDiff);
+//                    System.out.println(timeDiff);
                     if ( timeDiff >= 0 && timeDiff <= 60 ){
                             if(Objects.equals("set_value", fanSchedule.getSelectAction())){
                                 device.setStatus(Integer.parseInt(fanSchedule.getActionValue()) != 0 ? "ON" : "OFF");
@@ -549,9 +550,9 @@ public class MQTTPubSubService {
 
                 boolean[] effectiveDays = ledSchedule.getWeekdaysRepeat();
 
-                if (ledSchedule.getTime() == null){
-                    continue;
-                }
+//                if (ledSchedule.getTime() == null){
+//                    continue;
+//                }
 
                 String[] trimmed = ledSchedule.getTime().split(":");
                 LocalTime scheduleTime = LocalTime.of(Integer.parseInt(trimmed[0]) + 7, Integer.parseInt(trimmed[1]), 0);
@@ -561,9 +562,8 @@ public class MQTTPubSubService {
 
                 // Nếu như hôm đó có hiệu lực và được lặp lại hoặc không được lặp lại nhưng chưa chạy lần nào
                 if (effectiveDays[today] && (ledSchedule.isRepeat() || (Ledruns.get(today) == 0 && !ledSchedule.isRepeat()))){
-                    // Nếu trong ngày chưa chạy lần nào và hiện tại đã sau tgian lên lịch
                     long timeDiff = Duration.between(scheduleTime, nowTime).getSeconds();
-                    System.out.println(timeDiff);
+//                    System.out.println(timeDiff);
                     if ( timeDiff >= 0 && timeDiff <= 60 ){
                         if(Objects.equals("set_value", ledSchedule.getSelectAction())){
                             String color = ledSchedule.getActionValue();

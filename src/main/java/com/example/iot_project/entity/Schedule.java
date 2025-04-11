@@ -10,6 +10,9 @@ import java.util.Arrays;
 
 public class Schedule{
     @Field("set")
+    private String set;
+
+    @Field("time")
     private String time;
     private boolean repeat;
     @Field(name="repeatOptions")
@@ -19,7 +22,7 @@ public class Schedule{
     private String actionValue;
 
     public String getTime() {
-        return time;
+        return set;
     }
 
     public boolean isRepeat() {
@@ -45,7 +48,7 @@ public class Schedule{
     @Override
     public String toString() {
         return "Schedule{" +
-                "time=" + time +
+                "time=" + set +
                 ", repeat=" + repeat +
                 ", weekdaysRepeat=" + Arrays.toString(weekdaysRepeat) +
                 ", selectAction='" + selectAction + '\'' +
