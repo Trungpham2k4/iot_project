@@ -1,11 +1,7 @@
-package com.example.iot_project.entity;
+package com.example.iot_project.model;
 
-import org.bson.json.JsonObject;
-import org.springframework.cglib.core.Local;
 import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.format.annotation.DateTimeFormat;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 
 public class Schedule{

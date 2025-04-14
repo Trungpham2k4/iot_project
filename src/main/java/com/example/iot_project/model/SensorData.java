@@ -1,4 +1,4 @@
-package com.example.iot_project.entity;
+package com.example.iot_project.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

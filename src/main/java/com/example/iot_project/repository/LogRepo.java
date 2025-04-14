@@ -1,7 +1,7 @@
 package com.example.iot_project.repository;
 
 
-import com.example.iot_project.entity.Log;
+import com.example.iot_project.model.Log;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

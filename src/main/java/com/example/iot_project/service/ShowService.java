@@ -1,6 +1,6 @@
 package com.example.iot_project.service;
 
-import com.example.iot_project.entity.SensorData;
+import com.example.iot_project.model.SensorData;
 import com.example.iot_project.repository.SensorDataRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
