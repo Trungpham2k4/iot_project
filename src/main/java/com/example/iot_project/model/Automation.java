@@ -1,7 +1,13 @@
 package com.example.iot_project.model;
 
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+@Setter
+@Getter
+@Builder
 public class Automation {
     private String data;
     private String condition;
@@ -11,28 +17,4 @@ public class Automation {
     private String task;
     private String device;
     private String deviceValue;
-
-    public String getData() {
-        return data;
-    }
-
-    public String getCondition() {
-        return condition;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public String getTask() {
-        return task;
-    }
-
-    public String getDevice() {
-        return device;
-    }
-
-    public String getDeviceValue() {
-        return deviceValue;
-    }
 }

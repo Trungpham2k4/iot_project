@@ -7,14 +7,12 @@ import com.example.iot_project.repository.DeviceRepo;
 import com.example.iot_project.repository.LogRepo;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.annotation.PostConstruct;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.BiPredicate;
 
 @Service
@@ -45,29 +43,31 @@ public class AutomationService {
         operators.put("=", Double::equals);
     }
 
-    public void checkAutomation(Automation fanAutomation, Automation ledAutomation,
-                                 String fanCondition, double fanValue, String fanAction, String fanDeviceValue,
-                                 String fanDevice, String ledCondition, double ledValue, String ledAction,
-                                 String ledDeviceValue, String ledDevice, Double temperature, Double humidity) {
-        if (fanAutomation != null) {
+    public void checkAutomation(List<Automation> fanAutomations, List<Automation> ledAutomations,
+                                Double temperature, Double humidity) {
+//        String fanCondition, double fanValue, String fanAction, String fanDeviceValue,
+//                String fanDevice, String ledCondition, double ledValue, String ledAction,
+//                String ledDeviceValue, String ledDevice
+        for (Automation fanAutomation : fanAutomations) {
             if (Objects.equals(fanAutomation.getData(), "temperature")) {
-                checkCondition(fanAction, fanDeviceValue, fanDevice, fanCondition,
-                        fanValue, temperature);
+                checkCondition(fanAutomation.getTask(), fanAutomation.getDeviceValue(), fanAutomation.getDevice(),
+                        fanAutomation.getCondition(), Double.parseDouble(fanAutomation.getValue()), temperature);
 
             }
             if (Objects.equals(fanAutomation.getData(), "humidity")) {
-                checkCondition(fanAction, fanDeviceValue, fanDevice, fanCondition,
-                        fanValue, humidity);
+                checkCondition(fanAutomation.getTask(), fanAutomation.getDeviceValue(), fanAutomation.getDevice(),
+                        fanAutomation.getCondition(), Double.parseDouble(fanAutomation.getValue()), humidity);
             }
         }
-        if (ledAutomation != null){
-            if (Objects.equals(ledAutomation.getData(), "temperature")){
-                checkCondition(ledAction, ledDeviceValue, ledDevice, ledCondition,
-                        ledValue, temperature);
+        for (Automation ledAutomation : ledAutomations) {
+            if (Objects.equals(ledAutomation.getData(), "temperature")) {
+                checkCondition(ledAutomation.getTask(), ledAutomation.getDeviceValue(), ledAutomation.getDevice(),
+                        ledAutomation.getCondition(), Double.parseDouble(ledAutomation.getValue()), temperature);
+
             }
-            if (Objects.equals(ledAutomation.getData(), "humidity")){
-                checkCondition(ledAction, ledDeviceValue, ledDevice, ledCondition,
-                        ledValue, humidity);
+            if (Objects.equals(ledAutomation.getData(), "humidity")) {
+                checkCondition(ledAutomation.getTask(), ledAutomation.getDeviceValue(), ledAutomation.getDevice(),
+                        ledAutomation.getCondition(), Double.parseDouble(ledAutomation.getValue()), humidity);
             }
         }
     }

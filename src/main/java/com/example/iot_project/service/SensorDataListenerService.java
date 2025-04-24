@@ -9,6 +9,7 @@ import com.example.iot_project.repository.DeviceRepo;
 import com.example.iot_project.repository.Light_Sensor_DataRepo;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -19,12 +20,14 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Service
+@Slf4j
 public class SensorDataListenerService {
 //    private static final String USER_NAME = "TrungPham";
 //    private static final String SERVER_URI = "tcp://io.adafruit.com:1883";
@@ -112,35 +115,8 @@ public class SensorDataListenerService {
 
                     assert fan != null;
                     assert led != null;
-                    Automation fanAutomation = fan.getAutomation();
-                    Automation ledAutomation = led.getAutomation();
-
-                    String fanCondition = null;
-                    double fanValue = 0.0;
-                    String fanAction = null;
-                    String fanDeviceValue = null;
-                    String fanDevice = null;
-
-                    String ledCondition = null;
-                    double ledValue = 0.0;
-                    String ledAction = null;
-                    String ledDeviceValue = null;
-                    String ledDevice = null;
-
-                    if (fanAutomation != null){
-                        fanCondition = fanAutomation.getCondition();
-                        fanValue = Double.parseDouble(fanAutomation.getValue());
-                        fanAction = fanAutomation.getTask();
-                        fanDeviceValue = fanAutomation.getDeviceValue();
-                        fanDevice = fanAutomation.getDevice();
-                    }
-                    if (ledAutomation != null){
-                        ledCondition = ledAutomation.getCondition();
-                        ledValue = Double.parseDouble(ledAutomation.getValue());
-                        ledAction = ledAutomation.getTask();
-                        ledDeviceValue = ledAutomation.getDeviceValue();
-                        ledDevice = ledAutomation.getDevice();
-                    }
+                    List<Automation> fanAutomation = fan.getAutomation();
+                    List<Automation> ledAutomation = led.getAutomation();
 
 
                     switch (feed_id){
@@ -152,9 +128,7 @@ public class SensorDataListenerService {
                                     sessionData.put("humidity", Double.parseDouble(message));
 
                                     if(sessionData.containsKey("temperature")){
-                                        automationService.checkAutomation(fanAutomation, ledAutomation, fanCondition,
-                                                fanValue, fanAction, fanDeviceValue, fanDevice, ledCondition, ledValue,
-                                                ledAction, ledDeviceValue, ledDevice,
+                                        automationService.checkAutomation(fanAutomation, ledAutomation,
                                                 sessionData.get("temperature"), sessionData.get("humidity"));
                                         saveData(date);
                                     }
@@ -163,9 +137,7 @@ public class SensorDataListenerService {
                                     sessionData.put("temperature", Double.parseDouble(message));
 
                                     if(sessionData.containsKey("humidity")){
-                                        automationService.checkAutomation(fanAutomation, ledAutomation, fanCondition,
-                                                fanValue, fanAction, fanDeviceValue, fanDevice, ledCondition, ledValue,
-                                                ledAction, ledDeviceValue, ledDevice,
+                                        automationService.checkAutomation(fanAutomation, ledAutomation,
                                                 sessionData.get("temperature"), sessionData.get("humidity"));
                                         saveData(date);
                                     }
@@ -182,16 +154,18 @@ public class SensorDataListenerService {
                             data.setTimestamp(date);
                             light_sensor_dataRepo.save(data);
 
-                            if (fanAutomation != null){
-                                if (Objects.equals(fanAutomation.getData(),"light")){
-                                    automationService.checkCondition(fanAction, fanDeviceValue, fanDevice, fanCondition,
-                                            fanValue, data.getIntensity());
+                            for (Automation automation : fanAutomation){
+                                if (Objects.equals(automation.getData(),"light")){
+                                    automationService.checkCondition(automation.getTask(), automation.getDeviceValue(),
+                                            automation.getDevice(), automation.getCondition(),
+                                            Double.parseDouble(automation.getValue()), data.getIntensity());
                                 }
                             }
-                            if (ledAutomation != null){
-                                if (Objects.equals(ledAutomation.getData(),"light")){
-                                    automationService.checkCondition(ledAction, ledDeviceValue, ledDevice, ledCondition,
-                                            ledValue, data.getIntensity());
+                            for (Automation automation : ledAutomation){
+                                if (Objects.equals(automation.getData(),"light")){
+                                    automationService.checkCondition(automation.getTask(), automation.getDeviceValue(),
+                                            automation.getDevice(), automation.getCondition(),
+                                            Double.parseDouble(automation.getValue()), data.getIntensity());
                                 }
                             }
 
@@ -227,7 +201,7 @@ public class SensorDataListenerService {
 
 
         }catch(Exception e){
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
 
     }

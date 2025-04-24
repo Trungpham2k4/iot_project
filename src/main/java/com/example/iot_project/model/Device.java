@@ -1,10 +1,16 @@
 package com.example.iot_project.model;
 
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.util.List;
+
+@Getter
+@Setter
 @Document("Device")
 public class Device {
     @Id
@@ -19,54 +25,10 @@ public class Device {
 
     // POJO class: MongoDB tự ánh xạ field sang đúng tên các field trong class
     @Field(name = "schedule")
-    private Schedule schedule;
+    private List<Schedule> schedule;
 
     @Field(name = "automation")
-    private Automation automation;
-
-    public Automation getAutomation() {
-        return automation;
-    }
-
-    public void setSchedule(Schedule schedule) {
-        this.schedule = schedule;
-    }
-
-    public Schedule getSchedule() {
-        return schedule;
-    }
-
-    public String getDeviceId() {
-        return deviceId;
-    }
-
-    public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getLedColor() {
-        return ledColor;
-    }
-
-    public void setLedColor(String ledColor) {
-        this.ledColor = ledColor;
-    }
-
-    public Integer getFanSpeed() {
-        return fanSpeed;
-    }
-
-    public void setFanSpeed(Integer fanSpeed) {
-        this.fanSpeed = fanSpeed;
-    }
+    private List<Automation> automation;
 
     public Boolean getEditFlag() {
         return shouldUpdate;

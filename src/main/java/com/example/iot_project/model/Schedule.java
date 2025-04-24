@@ -1,50 +1,37 @@
 package com.example.iot_project.model;
 
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.Arrays;
 
+@Getter
+@Setter
+@Builder
 public class Schedule{
-    @Field("set")
-    private String set;
 
     @Field("time")
     private String time;
+
+    @Field("to")
+    private String to;
+
     private boolean repeat;
+
     @Field(name="repeatOptions")
     private boolean[] weekdaysRepeat;
+
     @Field(name="selectedAction")
     private String selectAction;
+
     private String actionValue;
-
-    public String getTime() {
-        return set;
-    }
-
-    public boolean isRepeat() {
-        return repeat;
-    }
-
-    public boolean[] getWeekdaysRepeat() {
-        return weekdaysRepeat;
-    }
-
-    public String getSelectAction() {
-        return selectAction;
-    }
-
-    public String getActionValue() {
-        return actionValue;
-    }
-
-    public void setRepeat(boolean repeat) {
-        this.repeat = repeat;
-    }
 
     @Override
     public String toString() {
         return "Schedule{" +
-                "time=" + set +
+                "time=" + time +
                 ", repeat=" + repeat +
                 ", weekdaysRepeat=" + Arrays.toString(weekdaysRepeat) +
                 ", selectAction='" + selectAction + '\'' +
