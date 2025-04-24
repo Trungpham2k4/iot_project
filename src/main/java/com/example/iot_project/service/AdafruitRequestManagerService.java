@@ -44,7 +44,7 @@ public class AdafruitRequestManagerService {
 
     }
     @Scheduled(fixedRate = 10000)
-    public void scheduleTask() throws InterruptedException {
+    public void scheduleTask() {
         deviceUpdateService.clientListenerAndUpdate();
         scheduleService.checkSchedule();
     }

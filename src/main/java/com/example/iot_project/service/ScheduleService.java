@@ -73,7 +73,7 @@ public class ScheduleService {
 //        Ledruns.put(6,0);
     }
 
-    public void checkSchedule() throws InterruptedException {
+    public void checkSchedule() {
         System.out.println("Retrieve schedule");
         List<Device> devices = deviceRepo.findAll();
         int today = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).getDayOfWeek().getValue() - 1;
@@ -102,64 +102,64 @@ public class ScheduleService {
                 for (int i = 0; i < fanSchedules.size(); i++){
                     // getValue trả về giá trị từ t2 -> CN: 1 -> 7
                     boolean[] effectiveDays = fanSchedules.get(i).getWeekdaysRepeat();
+                    if (!fanSchedules.get(i).isRepeat() || (effectiveDays[today] && fanSchedules.get(i).isRepeat())){
+                        String action = fanSchedules.get(i).getSelectAction();
 
-                    String action = fanSchedules.get(i).getSelectAction();
+                        ZonedDateTime startUtcTime = ZonedDateTime.parse(fanSchedules.get(i).getTime());
+                        ZonedDateTime endUtcTime = ZonedDateTime.parse(fanSchedules.get(i).getTo());
 
-                    ZonedDateTime startUtcTime = ZonedDateTime.parse(fanSchedules.get(i).getTime());
-                    ZonedDateTime endUtcTime = ZonedDateTime.parse(fanSchedules.get(i).getTo());
-
-                    LocalTime start = startUtcTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime();
-                    LocalTime end = endUtcTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime();
-
-
-                    LocalTime nowTime = LocalTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                        LocalTime start = startUtcTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime();
+                        LocalTime end = endUtcTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime();
 
 
-                    System.out.println(start);
-                    System.out.println(nowTime);
-                    System.out.println(end);
+                        LocalTime nowTime = LocalTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 
-                    long startPeriod = Duration.between(nowTime, start).getSeconds();
-                    long endPeriod = Duration.between(end, nowTime).getSeconds();
 
-                    if (startPeriod >= 0 && startPeriod < 10){
-                        activeFanSchedule.add(i);
-                        if(updatePrevFan.get()){
-                            updatePrevFan.set(false);
-                            fanValue.set(device.getFanSpeed());
-                        }
-                    } else if (nowTime.isAfter(start) && nowTime.isBefore(end)){
-                        if(Objects.equals("set_value", action)){
-                            device.setStatus(Integer.parseInt(fanSchedules.get(i).getActionValue()) != 0 ? "ON" : "OFF");
-                            device.setFanSpeed(Integer.parseInt(fanSchedules.get(i).getActionValue()));
-                            adafruitRequestManagerService.publish(FEEDS[1], fanSchedules.get(i).getActionValue());
-                        }
-                        if(Objects.equals("turn_off", action)) {
-                            device.setStatus("OFF");
-                            device.setFanSpeed(Integer.valueOf("0"));
-                            adafruitRequestManagerService.publish(FEEDS[1], "0");
-                        }
-                        if(Objects.equals("turn_on", action)){
-                            device.setStatus("ON");
-                            device.setFanSpeed(Integer.valueOf("50"));
-                            adafruitRequestManagerService.publish(FEEDS[1], "50");
-                        }
-                    }else if(endPeriod >= 0 && endPeriod < 10){
-                        activeFanSchedule.remove(Integer.valueOf(i));
-                        int res;
-                        if (activeFanSchedule.isEmpty()){
-                            updatePrevFan.set(true);
-                            res = fanValue.get();
-                            if(res == 0){
-                                device.setStatus("OFF");
-                            }else{
-                                device.setStatus("ON");
+                        System.out.println(start);
+                        System.out.println(nowTime);
+                        System.out.println(end);
+
+                        long startPeriod = Duration.between(nowTime, start).getSeconds();
+                        long endPeriod = Duration.between(end, nowTime).getSeconds();
+
+                        if (startPeriod >= 0 && startPeriod < 10){
+                            activeFanSchedule.add(i);
+                            if(updatePrevFan.get()){
+                                updatePrevFan.set(false);
+                                fanValue.set(device.getFanSpeed());
                             }
-                            device.setFanSpeed(res);
-                            adafruitRequestManagerService.publish(FEEDS[1], ""+res);
+                        } else if (nowTime.isAfter(start) && nowTime.isBefore(end)){
+                            if(Objects.equals("set_value", action)){
+                                device.setStatus(Integer.parseInt(fanSchedules.get(i).getActionValue()) != 0 ? "ON" : "OFF");
+                                device.setFanSpeed(Integer.parseInt(fanSchedules.get(i).getActionValue()));
+                                adafruitRequestManagerService.publish(FEEDS[1], fanSchedules.get(i).getActionValue());
+                            }
+                            if(Objects.equals("turn_off", action)) {
+                                device.setStatus("OFF");
+                                device.setFanSpeed(Integer.valueOf("0"));
+                                adafruitRequestManagerService.publish(FEEDS[1], "0");
+                            }
+                            if(Objects.equals("turn_on", action)){
+                                device.setStatus("ON");
+                                device.setFanSpeed(Integer.valueOf("50"));
+                                adafruitRequestManagerService.publish(FEEDS[1], "50");
+                            }
+                        }else if(endPeriod >= 0 && endPeriod < 10){
+                            activeFanSchedule.remove(Integer.valueOf(i));
+                            int res;
+                            if (activeFanSchedule.isEmpty()){
+                                updatePrevFan.set(true);
+                                res = fanValue.get();
+                                if(res == 0){
+                                    device.setStatus("OFF");
+                                }else{
+                                    device.setStatus("ON");
+                                }
+                                device.setFanSpeed(res);
+                                adafruitRequestManagerService.publish(FEEDS[1], ""+res);
+                            }
                         }
                     }
-
                 }
             }
             if (Objects.equals("LED_1", device.getDeviceId())){
@@ -175,65 +175,67 @@ public class ScheduleService {
                 for (int i = 0; i < ledSchedules.size(); i++){
                     boolean[] effectiveDays = ledSchedules.get(i).getWeekdaysRepeat();
 
-                    String action = ledSchedules.get(i).getSelectAction();
+                    if (!ledSchedules.get(i).isRepeat() || (effectiveDays[today] && ledSchedules.get(i).isRepeat())){
+                        String action = ledSchedules.get(i).getSelectAction();
 
-                    ZonedDateTime startUtcTime = ZonedDateTime.parse(ledSchedules.get(i).getTime());
-                    ZonedDateTime endUtcTime = ZonedDateTime.parse(ledSchedules.get(i).getTo());
+                        ZonedDateTime startUtcTime = ZonedDateTime.parse(ledSchedules.get(i).getTime());
+                        ZonedDateTime endUtcTime = ZonedDateTime.parse(ledSchedules.get(i).getTo());
 
-                    LocalTime start = startUtcTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime();
-                    LocalTime end = endUtcTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime();
+                        LocalTime start = startUtcTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime();
+                        LocalTime end = endUtcTime.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalTime();
 
 
 
-                    LocalTime nowTime = LocalTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                        LocalTime nowTime = LocalTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 //                    System.out.println(start);
 //                    System.out.println(nowTime);
 //                    System.out.println(end);
 
-                    long startPeriod = Duration.between(nowTime, start).getSeconds();
-                    long endPeriod = Duration.between(end, nowTime).getSeconds();
+                        long startPeriod = Duration.between(nowTime, start).getSeconds();
+                        long endPeriod = Duration.between(end, nowTime).getSeconds();
 
-                    if (startPeriod >= 0 && startPeriod < 10){
-                        activeLedSchedule.add(i);
-                        if (updatePrevLed.get()){
-                            updatePrevLed.set(false);
-                            ledValue = device.getLedColor();
-                        }
-                    } else if (nowTime.isAfter(start) && nowTime.isBefore(end)){
-                        if(Objects.equals("set_value", action)){
-                            String color = ledSchedules.get(i).getActionValue();
-                            device.setStatus(Objects.equals(color, "#000000") ? "OFF" : "ON");
-                            device.setLedColor(color);
-                            adafruitRequestManagerService.publish(FEEDS[5], Objects.equals(color, "#000000") ? "0" : "1");
-                            adafruitRequestManagerService.publish(FEEDS[0], color);
-                        }
-                        if(Objects.equals("turn_off", action)) {
-                            device.setStatus("OFF");
-                            device.setLedColor("#000000");
-                            adafruitRequestManagerService.publish(FEEDS[5], "0");
-                            adafruitRequestManagerService.publish(FEEDS[0], "#000000");
-                        }
-                        if(Objects.equals("turn_on", action)){
-                            device.setStatus("ON");
-                            device.setLedColor("#ff0000");
-                            adafruitRequestManagerService.publish(FEEDS[5], "1");
-                            adafruitRequestManagerService.publish(FEEDS[0], "#ff0000");
-                        }
-                    }else if(endPeriod >= 0 && endPeriod < 10){
-                        activeLedSchedule.remove(Integer.valueOf(i));
-                        String res;
-                        if (activeLedSchedule.isEmpty()){
-                            updatePrevLed.set(true);
-                            res = ledValue;
-                            if(Objects.equals(res, "#000000")){
-                                device.setStatus("OFF");
-                                adafruitRequestManagerService.publish(FEEDS[5], "0");
-                            }else{
-                                device.setStatus("ON");
-                                adafruitRequestManagerService.publish(FEEDS[5], "1");
+                        if (startPeriod >= 0 && startPeriod < 10){
+                            activeLedSchedule.add(i);
+                            if (updatePrevLed.get()){
+                                updatePrevLed.set(false);
+                                ledValue = device.getLedColor();
                             }
-                            device.setLedColor(res);
-                            adafruitRequestManagerService.publish(FEEDS[0], res);
+                        } else if (nowTime.isAfter(start) && nowTime.isBefore(end)){
+                            if(Objects.equals("set_value", action)){
+                                String color = ledSchedules.get(i).getActionValue();
+                                device.setStatus(Objects.equals(color, "#000000") ? "OFF" : "ON");
+                                device.setLedColor(color);
+                                adafruitRequestManagerService.publish(FEEDS[5], Objects.equals(color, "#000000") ? "0" : "1");
+                                adafruitRequestManagerService.publish(FEEDS[0], color);
+                            }
+                            if(Objects.equals("turn_off", action)) {
+                                device.setStatus("OFF");
+                                device.setLedColor("#000000");
+                                adafruitRequestManagerService.publish(FEEDS[5], "0");
+                                adafruitRequestManagerService.publish(FEEDS[0], "#000000");
+                            }
+                            if(Objects.equals("turn_on", action)){
+                                device.setStatus("ON");
+                                device.setLedColor("#ff0000");
+                                adafruitRequestManagerService.publish(FEEDS[5], "1");
+                                adafruitRequestManagerService.publish(FEEDS[0], "#ff0000");
+                            }
+                        }else if(endPeriod >= 0 && endPeriod < 10){
+                            activeLedSchedule.remove(Integer.valueOf(i));
+                            String res;
+                            if (activeLedSchedule.isEmpty()){
+                                updatePrevLed.set(true);
+                                res = ledValue;
+                                if(Objects.equals(res, "#000000")){
+                                    device.setStatus("OFF");
+                                    adafruitRequestManagerService.publish(FEEDS[5], "0");
+                                }else{
+                                    device.setStatus("ON");
+                                    adafruitRequestManagerService.publish(FEEDS[5], "1");
+                                }
+                                device.setLedColor(res);
+                                adafruitRequestManagerService.publish(FEEDS[0], res);
+                            }
                         }
                     }
                 }
