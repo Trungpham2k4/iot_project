@@ -1,12 +1,10 @@
 package com.example.iot_project.service;
 
-import com.example.iot_project.model.Automation;
-import com.example.iot_project.model.DHT20_Sensor_Data;
-import com.example.iot_project.model.Device;
-import com.example.iot_project.model.Light_Sensor_Data;
+import com.example.iot_project.model.*;
 import com.example.iot_project.repository.DHT20_Sensor_DataRepo;
 import com.example.iot_project.repository.DeviceRepo;
 import com.example.iot_project.repository.Light_Sensor_DataRepo;
+import com.example.iot_project.repository.LogRepo;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +23,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @Slf4j
@@ -37,6 +38,9 @@ public class SensorDataListenerService {
     private static final String[] SUB_FEEDS = {
             dotenv.get("ADA_FRUIT_HUMID"), dotenv.get("ADA_FRUIT_LIGHT"), dotenv.get("ADA_FRUIT_TEMP")
     };
+    private final String[] PUB_FEEDS = {
+            dotenv.get("ADA_FRUIT_LED_COLOR"), dotenv.get("ADA_FRUIT_LED"), dotenv.get("ADA_FRUIT_FAN")
+    };
 
     private static final ConcurrentMap<String,Double> sessionData = new ConcurrentHashMap<>();
 
@@ -47,16 +51,25 @@ public class SensorDataListenerService {
 
     private final AutomationService automationService;
 
+    private final AtomicBoolean fanLock = new AtomicBoolean(false);
+    private final AtomicBoolean ledLock = new AtomicBoolean(false);
+
+    private final AtomicInteger prevValue = new AtomicInteger(0);
+    private final AtomicReference<String> prevColor = new AtomicReference<>("#000000");
+    private final AdafruitRequestManagerService adafruitRequestManagerService;
+    private final LogRepo logRepo;
 
     @Autowired
     public SensorDataListenerService(DHT20_Sensor_DataRepo DHT20repo, Light_Sensor_DataRepo light_sensor_dataRepo,
                                      DeviceRepo deviceRepo, MqttClient mqttClient,
-                                     AutomationService automationService) {
+                                     AutomationService automationService, AdafruitRequestManagerService adafruitRequestManagerService, LogRepo logRepo) {
         this.dht20_sensor_dataRepo = DHT20repo;
         this.light_sensor_dataRepo = light_sensor_dataRepo;
         this.deviceRepo = deviceRepo;
         this.mqttClient = mqttClient;
         this.automationService = automationService;
+        this.adafruitRequestManagerService = adafruitRequestManagerService;
+        this.logRepo = logRepo;
     }
 
     @PostConstruct
@@ -112,11 +125,8 @@ public class SensorDataListenerService {
 
                     Device fan = deviceRepo.getDeviceByDeviceId("FAN_1").orElse(null);
                     Device led = deviceRepo.getDeviceByDeviceId("LED_1").orElse(null);
-
-                    assert fan != null;
-                    assert led != null;
-                    List<Automation> fanAutomation = fan.getAutomation();
-                    List<Automation> ledAutomation = led.getAutomation();
+                    Automation fanAutomation = fan.getAutomation();
+                    Automation ledAutomation = led.getAutomation();
 
 
                     switch (feed_id){
@@ -129,7 +139,8 @@ public class SensorDataListenerService {
 
                                     if(sessionData.containsKey("temperature")){
                                         automationService.checkAutomation(fanAutomation, ledAutomation,
-                                                sessionData.get("temperature"), sessionData.get("humidity"));
+                                                sessionData.get("temperature"), sessionData.get("humidity"), fan.getFanSpeed(),
+                                                led.getLedColor(), fanLock, ledLock, prevValue, prevColor);
                                         saveData(date);
                                     }
 
@@ -138,7 +149,8 @@ public class SensorDataListenerService {
 
                                     if(sessionData.containsKey("humidity")){
                                         automationService.checkAutomation(fanAutomation, ledAutomation,
-                                                sessionData.get("temperature"), sessionData.get("humidity"));
+                                                sessionData.get("temperature"), sessionData.get("humidity"), fan.getFanSpeed(),
+                                                led.getLedColor(), fanLock, ledLock, prevValue, prevColor);
                                         saveData(date);
                                     }
 
@@ -154,21 +166,64 @@ public class SensorDataListenerService {
                             data.setTimestamp(date);
                             light_sensor_dataRepo.save(data);
 
-                            for (Automation automation : fanAutomation){
-                                if (Objects.equals(automation.getData(),"light")){
-                                    automationService.checkCondition(automation.getTask(), automation.getDeviceValue(),
-                                            automation.getDevice(), automation.getCondition(),
-                                            Double.parseDouble(automation.getValue()), data.getIntensity());
+                            if (fanAutomation != null){
+                                if (!fanLock.get()){
+                                    fanLock.set(true);
+                                    prevValue.set(fan.getFanSpeed());
                                 }
-                            }
-                            for (Automation automation : ledAutomation){
-                                if (Objects.equals(automation.getData(),"light")){
-                                    automationService.checkCondition(automation.getTask(), automation.getDeviceValue(),
-                                            automation.getDevice(), automation.getCondition(),
-                                            Double.parseDouble(automation.getValue()), data.getIntensity());
+                                if (Objects.equals(fanAutomation.getData(),"light")){
+                                    automationService.checkCondition(fanAutomation.getTask(), fanAutomation.getDeviceValue(),
+                                            fanAutomation.getDevice(), fanAutomation.getCondition(),
+                                            Double.parseDouble(fanAutomation.getValue()), data.getIntensity());
+                                }
+                            }else{
+                                if (fanLock.get()){
+                                    fanLock.set(false);
+                                    fan.setFanSpeed(prevValue.get());
+                                    fan.setStatus(prevValue.get() == 0 ? "OFF" : "ON");
+
+                                    Log log = new Log();
+                                    log.setLogId(UUID.randomUUID().toString());
+                                    log.setFanSpeed(prevValue.get());
+                                    log.setTimestamp(LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+                                    log.setLEDColor(null);
+                                    log.setLEDStatus(null);
+
+                                    logRepo.save(log);
+                                    deviceRepo.save(fan);
+                                    adafruitRequestManagerService.publish(PUB_FEEDS[2], String.valueOf(prevValue.get()));
                                 }
                             }
 
+                            if (ledAutomation != null){
+                                if (!ledLock.get()){
+                                    ledLock.set(true);
+                                    prevColor.set(led.getLedColor());
+                                }
+                                if (Objects.equals(ledAutomation.getData(),"light")){
+                                    automationService.checkCondition(ledAutomation.getTask(), ledAutomation.getDeviceValue(),
+                                            ledAutomation.getDevice(), ledAutomation.getCondition(),
+                                            Double.parseDouble(ledAutomation.getValue()), data.getIntensity());
+                                }
+                            }else{
+                                if (ledLock.get()){
+                                    ledLock.set(false);
+                                    led.setLedColor(prevColor.get());
+                                    led.setStatus(Objects.equals(prevColor.get(), "#000000") ? "OFF" : "ON");
+
+                                    Log log = new Log();
+                                    log.setLogId(UUID.randomUUID().toString());
+                                    log.setFanSpeed(null);
+                                    log.setTimestamp(LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+                                    log.setLEDColor(prevColor.get());
+                                    log.setLEDStatus(Objects.equals(prevColor.get(), "#000000") ? "OFF" : "ON");
+
+                                    logRepo.save(log);
+                                    deviceRepo.save(led);
+                                    adafruitRequestManagerService.publish(PUB_FEEDS[1],Objects.equals(prevColor.get(), "#000000") ? "0" : "1" );
+                                    adafruitRequestManagerService.publish(PUB_FEEDS[0], prevColor.get());
+                                }
+                            }
                         }
                     }
 
