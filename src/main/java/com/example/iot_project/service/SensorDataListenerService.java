@@ -125,8 +125,8 @@ public class SensorDataListenerService {
 
                     Device fan = deviceRepo.getDeviceByDeviceId("FAN_1").orElse(null);
                     Device led = deviceRepo.getDeviceByDeviceId("LED_1").orElse(null);
-                    Automation fanAutomation = fan.getAutomation();
-                    Automation ledAutomation = led.getAutomation();
+                    List<Automation> fanAutomation = fan.getAutomation();
+                    List<Automation> ledAutomation = led.getAutomation();
 
 
                     switch (feed_id){
@@ -166,15 +166,15 @@ public class SensorDataListenerService {
                             data.setTimestamp(date);
                             light_sensor_dataRepo.save(data);
 
-                            if (fanAutomation != null){
+                            if (!fanAutomation.isEmpty()){
                                 if (!fanLock.get()){
                                     fanLock.set(true);
                                     prevValue.set(fan.getFanSpeed());
                                 }
-                                if (Objects.equals(fanAutomation.getData(),"light")){
-                                    automationService.checkCondition(fanAutomation.getTask(), fanAutomation.getDeviceValue(),
-                                            fanAutomation.getDevice(), fanAutomation.getCondition(),
-                                            Double.parseDouble(fanAutomation.getValue()), data.getIntensity());
+                                if (Objects.equals(fanAutomation.getFirst().getData(),"light")){
+                                    automationService.checkCondition(fanAutomation.getFirst().getTask(), fanAutomation.getFirst().getDeviceValue(),
+                                            fanAutomation.getFirst().getDevice(), fanAutomation.getFirst().getCondition(),
+                                            Double.parseDouble(fanAutomation.getFirst().getValue()), data.getIntensity());
                                 }
                             }else{
                                 if (fanLock.get()){
@@ -195,15 +195,15 @@ public class SensorDataListenerService {
                                 }
                             }
 
-                            if (ledAutomation != null){
+                            if (!ledAutomation.isEmpty()){
                                 if (!ledLock.get()){
                                     ledLock.set(true);
                                     prevColor.set(led.getLedColor());
                                 }
-                                if (Objects.equals(ledAutomation.getData(),"light")){
-                                    automationService.checkCondition(ledAutomation.getTask(), ledAutomation.getDeviceValue(),
-                                            ledAutomation.getDevice(), ledAutomation.getCondition(),
-                                            Double.parseDouble(ledAutomation.getValue()), data.getIntensity());
+                                if (Objects.equals(ledAutomation.getFirst().getData(),"light")){
+                                    automationService.checkCondition(ledAutomation.getFirst().getTask(), ledAutomation.getFirst().getDeviceValue(),
+                                            ledAutomation.getFirst().getDevice(), ledAutomation.getFirst().getCondition(),
+                                            Double.parseDouble(ledAutomation.getFirst().getValue()), data.getIntensity());
                                 }
                             }else{
                                 if (ledLock.get()){

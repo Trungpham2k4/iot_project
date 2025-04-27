@@ -28,7 +28,7 @@ public class Device {
     private List<Schedule> schedule;
 
     @Field(name = "automation")
-    private Automation automation;
+    private List<Automation> automation;
 
     public Boolean getEditFlag() {
         return shouldUpdate;

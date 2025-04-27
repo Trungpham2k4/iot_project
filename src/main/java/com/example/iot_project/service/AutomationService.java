@@ -53,11 +53,11 @@ public class AutomationService {
         operators.put("=", Double::equals);
     }
 
-    public void checkAutomation(Automation fanAutomation, Automation ledAutomation,
+    public void checkAutomation(List<Automation> fanAutomation, List<Automation> ledAutomation,
                                 Double temperature, Double humidity, Integer prevFan, String prevColor,
                                 AtomicBoolean fanLock, AtomicBoolean ledLock, AtomicInteger prevValue,
                                 AtomicReference<String> setPrevColor) {
-            if(fanAutomation != null){
+            if(!fanAutomation.isEmpty()){
                 if (!fanLock.get()){
                     prevValue.set(prevFan);
                     fanLock.set(true);
@@ -85,7 +85,7 @@ public class AutomationService {
             }
 
 
-            if (ledAutomation != null) {
+            if (!ledAutomation.isEmpty()) {
                 if (!ledLock.get()){
                     ledLock.set(true);
                     setPrevColor.set(prevColor);
@@ -114,17 +114,17 @@ public class AutomationService {
             }
     }
 
-    private void generalCheck(Automation automation,
+    private void generalCheck(List<Automation> automation,
                               Double temperature,
                               Double humidity){
-        if (Objects.equals(automation.getData(), "temperature")) {
-            checkCondition(automation.getTask(), automation.getDeviceValue(), automation.getDevice(),
-                    automation.getCondition(), Double.parseDouble(automation.getValue()), temperature);
+        if (Objects.equals(automation.getFirst().getData(), "temperature")) {
+            checkCondition(automation.getFirst().getTask(), automation.getFirst().getDeviceValue(), automation.getFirst().getDevice(),
+                    automation.getFirst().getCondition(), Double.parseDouble(automation.getFirst().getValue()), temperature);
 
         }
-        if (Objects.equals(automation.getData(), "humidity")) {
-            checkCondition(automation.getTask(), automation.getDeviceValue(), automation.getDevice(),
-                    automation.getCondition(), Double.parseDouble(automation.getValue()), humidity);
+        if (Objects.equals(automation.getFirst().getData(), "humidity")) {
+            checkCondition(automation.getFirst().getTask(), automation.getFirst().getDeviceValue(), automation.getFirst().getDevice(),
+                    automation.getFirst().getCondition(), Double.parseDouble(automation.getFirst().getValue()), humidity);
         }
 
     }
