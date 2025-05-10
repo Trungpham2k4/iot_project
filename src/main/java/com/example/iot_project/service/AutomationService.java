@@ -62,7 +62,7 @@ public class AutomationService {
                     prevValue.set(prevFan);
                     fanLock.set(true);
                 }
-                generalCheck(fanAutomation, temperature, humidity);
+                generalCheck(fanAutomation, temperature, humidity, fanLock, ledLock, prevValue, setPrevColor);
             }else{
                 /// luu ca gia tri, status, log cua quat
                 if(fanLock.get()){
@@ -90,7 +90,7 @@ public class AutomationService {
                     ledLock.set(true);
                     setPrevColor.set(prevColor);
                 }
-                generalCheck(ledAutomation, temperature, humidity);
+                generalCheck(ledAutomation, temperature, humidity, fanLock, ledLock, prevValue, setPrevColor);
             }else{
                 if(ledLock.get()){
                     ledLock.set(false);
@@ -115,22 +115,27 @@ public class AutomationService {
     }
 
     private void generalCheck(List<Automation> automation,
-                              Double temperature,
-                              Double humidity){
+                              Double temperature, Double humidity,
+                              AtomicBoolean fanLock, AtomicBoolean ledLock, AtomicInteger prevValue,
+                              AtomicReference<String> setPrevColor){
         if (Objects.equals(automation.getFirst().getData(), "temperature")) {
             checkCondition(automation.getFirst().getTask(), automation.getFirst().getDeviceValue(), automation.getFirst().getDevice(),
-                    automation.getFirst().getCondition(), Double.parseDouble(automation.getFirst().getValue()), temperature);
+                    automation.getFirst().getCondition(), Double.parseDouble(automation.getFirst().getValue()), temperature,
+                    fanLock, ledLock, prevValue, setPrevColor);
 
         }
         if (Objects.equals(automation.getFirst().getData(), "humidity")) {
             checkCondition(automation.getFirst().getTask(), automation.getFirst().getDeviceValue(), automation.getFirst().getDevice(),
-                    automation.getFirst().getCondition(), Double.parseDouble(automation.getFirst().getValue()), humidity);
+                    automation.getFirst().getCondition(), Double.parseDouble(automation.getFirst().getValue()), humidity,
+                    fanLock, ledLock, prevValue, setPrevColor);
         }
 
     }
 
     public void checkCondition(String action, String actionValue, String device,
-                                String condition,  double conditionValue, double sensorValue) {
+                                String condition,  double conditionValue, double sensorValue,
+                               AtomicBoolean fanLock, AtomicBoolean ledLock, AtomicInteger prevValue,
+                               AtomicReference<String> setPrevColor) {
         switch (device) {
             case "fan" -> {
                 if (operators.get(condition).test(sensorValue, conditionValue)) {
@@ -185,6 +190,23 @@ public class AutomationService {
                         fan.setStatus(Integer.parseInt(actionValue) == 0 ? "OFF" : "ON");
                         deviceRepo.save(fan);
                     }
+                }else{
+                    int fanVal = prevValue.get();
+                    adafruitRequestManagerService.publish(PUB_FEEDS[2], Integer.toString(fanVal));
+
+                    Log log = new Log();
+                    log.setLogId(UUID.randomUUID().toString());
+                    log.setLEDColor(null);
+                    log.setFanSpeed(fanVal);
+                    log.setLEDStatus(null);
+                    log.setTimestamp(LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+                    logRepo.save(log);
+
+                    Device fan = deviceRepo.getDeviceByDeviceId("FAN_1").orElse(null);
+                    assert fan != null;
+                    fan.setFanSpeed(fanVal);
+                    fan.setStatus(fanVal == 0 ? "OFF" : "ON");
+                    deviceRepo.save(fan);
                 }
 
             }
@@ -247,6 +269,24 @@ public class AutomationService {
                         led.setStatus(Objects.equals(actionValue, "#000000") ? "OFF" : "ON");
                         deviceRepo.save(led);
                     }
+                }else{
+                    String color = setPrevColor.get();
+                    adafruitRequestManagerService.publish(PUB_FEEDS[1], Objects.equals(color, "#000000") ? "0" : "1");
+                    adafruitRequestManagerService.publish(PUB_FEEDS[0], color);
+
+                    Log log = new Log();
+                    log.setLogId(UUID.randomUUID().toString());
+                    log.setLEDColor(color);
+                    log.setFanSpeed(null);
+                    log.setLEDStatus(Objects.equals(color, "#000000") ? "OFF" : "ON");
+                    log.setTimestamp(LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+                    logRepo.save(log);
+
+                    Device led = deviceRepo.getDeviceByDeviceId("LED_1").orElse(null);
+                    assert led != null;
+                    led.setLedColor(color);
+                    led.setStatus(Objects.equals(color, "#000000") ? "OFF" : "ON");
+                    deviceRepo.save(led);
                 }
             }
         }

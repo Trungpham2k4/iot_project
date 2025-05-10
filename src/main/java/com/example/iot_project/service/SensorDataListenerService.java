@@ -174,7 +174,8 @@ public class SensorDataListenerService {
                                 if (Objects.equals(fanAutomation.getFirst().getData(),"light")){
                                     automationService.checkCondition(fanAutomation.getFirst().getTask(), fanAutomation.getFirst().getDeviceValue(),
                                             fanAutomation.getFirst().getDevice(), fanAutomation.getFirst().getCondition(),
-                                            Double.parseDouble(fanAutomation.getFirst().getValue()), data.getIntensity());
+                                            Double.parseDouble(fanAutomation.getFirst().getValue()), data.getIntensity(),
+                                            fanLock, ledLock, prevValue, prevColor);
                                 }
                             }else{
                                 if (fanLock.get()){
@@ -195,6 +196,8 @@ public class SensorDataListenerService {
                                 }
                             }
 
+                            ///  Demo lỗi do cô k xóa automation, k xóa => K release lock, k set được cái prevColor là màu hiện tại
+                            /// => Luôn dùng prev cũ (màu đỏ)
                             if (!ledAutomation.isEmpty()){
                                 if (!ledLock.get()){
                                     ledLock.set(true);
@@ -203,7 +206,8 @@ public class SensorDataListenerService {
                                 if (Objects.equals(ledAutomation.getFirst().getData(),"light")){
                                     automationService.checkCondition(ledAutomation.getFirst().getTask(), ledAutomation.getFirst().getDeviceValue(),
                                             ledAutomation.getFirst().getDevice(), ledAutomation.getFirst().getCondition(),
-                                            Double.parseDouble(ledAutomation.getFirst().getValue()), data.getIntensity());
+                                            Double.parseDouble(ledAutomation.getFirst().getValue()), data.getIntensity(),
+                                            fanLock, ledLock, prevValue, prevColor);
                                 }
                             }else{
                                 if (ledLock.get()){
